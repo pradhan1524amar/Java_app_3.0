@@ -1,4 +1,4 @@
-//Imported shared library
+// Imported shared library
 @Library('my-shared-library') _
 
 pipeline {
@@ -12,8 +12,11 @@ pipeline {
     }
 
     stages {
+        // Stage to checkout code from Git
         stage('Git Checkout') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 gitCheckout(
                     branch: "main",
@@ -22,8 +25,11 @@ pipeline {
             }
         }
 
+        // Stage for running unit tests with Maven
         stage('Unit Test maven') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     mvnTest()
@@ -31,8 +37,11 @@ pipeline {
             }
         }
 
+        // Stage for running integration tests with Maven
         stage('Integration Test maven') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     mvnIntegrationTest()
@@ -40,8 +49,11 @@ pipeline {
             }
         }
 
+        // Stage for static code analysis with Sonarqube
         stage('Static code analysis: Sonarqube') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     def SonarQubecredentialsId = 'sonarqube-api'
@@ -50,8 +62,11 @@ pipeline {
             }
         }
 
+        // Stage for checking quality gate status with Sonarqube
         stage('Quality Gate Status Check : Sonarqube') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     def SonarQubecredentialsId = 'sonarqube-api'
@@ -60,8 +75,11 @@ pipeline {
             }
         }
 
+        // Stage for building the Maven project
         stage('Maven Build : maven') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     mvnBuild()
@@ -69,25 +87,35 @@ pipeline {
             }
         }
 
+        // Stage for pushing artifacts to JFrog Artifactory
         stage('Push to JFrog Artifactory') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
-                    def ec2Ip = sh(script: "curl http://checkip.amazonaws.com", returnStdout: true).trim()
-                    withCredentials([usernamePassword(credentialsId: 'Jfrog-api', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        echo "Attempting to push artifacts to JFrog Artifactory"
-                        echo "Username: $USERNAME"
-                        // Password won't be displayed for security reasons
-                        def curlCommand = "curl -u '${USERNAME}:${PASSWORD}' -T target/*.jar http://${ec2Ip}:8082/artifactory/example-repo-local/"
-                        echo "Executing curl command: $curlCommand"
-                        sh curlCommand
-                    }
+                    // Connect to JFrog Artifactory server
+                    def server = Artifactory.server 'Pushartifact'
+                    // Define the upload specification
+                    def uploadSpec = """{
+                        "files": [
+                            {
+                                "pattern": "target/*.jar",
+                                "target": "example-repo-local/"
+                            }
+                        ]
+                    }"""
+                    // Upload artifacts to JFrog Artifactory
+                    server.upload(uploadSpec)
                 }
             }
         }
 
+        // Stage for building Docker image
         stage('Docker Image Build') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     dockerBuild("${params.ImageName}","${params.ImageTag}","${params.DockerHubUser}")
@@ -95,8 +123,11 @@ pipeline {
             }
         }
 
+        // Stage for scanning Docker image with trivy
         stage('Docker Image Scan: trivy') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     dockerImageScan("${params.ImageName}","${params.ImageTag}","${params.DockerHubUser}")
@@ -104,8 +135,11 @@ pipeline {
             }
         }
 
+        // Stage for pushing Docker image to DockerHub
         stage('Docker Image Push : DockerHub') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     dockerImagePush("${params.ImageName}","${params.ImageTag}","${params.DockerHubUser}")
@@ -113,8 +147,11 @@ pipeline {
             }
         }
 
+        // Stage for cleaning up Docker image from DockerHub
         stage('Docker Image Cleanup : DockerHub') {
-            when { expression { params.action == 'create' } }
+            when { 
+                expression { params.action == 'create' } 
+            }
             steps {
                 script {
                     dockerImageCleanup("${params.ImageName}","${params.ImageTag}","${params.DockerHubUser}")
