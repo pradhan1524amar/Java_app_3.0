@@ -73,7 +73,7 @@ pipeline {
             when { expression { params.action == 'create' } }
             steps {
                 script {
-                    def ec2Ip = sh(script: "curl -s http://169.254.169.254/latest/meta-data/local-ipv4", returnStdout: true).trim()
+                    def ec2Ip = sh(script: "curl http://checkip.amazonaws.com", returnStdout: true).trim()
                     withCredentials([usernamePassword(credentialsId: 'Jfrog-api', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         echo "Attempting to push artifacts to JFrog Artifactory"
                         echo "Username: $USERNAME"
